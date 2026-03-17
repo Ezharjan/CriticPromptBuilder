@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paper Review Prompt Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ── Theme tokens ── */
+  :root {
+    --bg: #f5f4f0;
+    --bg-grad1: rgba(91,138,240,0.05);
+    --bg-grad2: rgba(180,150,60,0.04);
+    --surface: #ffffff;
+    --surface2: #eeecea;
+    --border: #d8d4cc;
+    --accent: #b8860b;
+    --accent-border: rgba(184,134,11,0.35);
+    --accent2: #3a6fd8;
+    --text: #1a1814;
+    --muted: #8a8278;
+    --label: #5a554e;
+    --success: #2a9e60;
+    --output-header-bg: #eae8e3;
+    --icon-btn-bg: rgba(0,0,0,0.04);
+    --icon-btn-hover: rgba(0,0,0,0.08);
+    --icon-btn-hover-border: rgba(0,0,0,0.18);
+    --h1-color: #1a1814;
+    --tag-color: #b8860b;
+    --toast-text: #fff;
+    --toggle-track: #d8d4cc;
+    --toggle-knob: #ffffff;
+    --toggle-active: #3a6fd8;
+    --mono: 'IBM Plex Mono', monospace;
+    --serif: 'Fraunces', serif;
+  }
+
+  [data-theme="dark"] {
+    --bg: #0d0f14;
+    --bg-grad1: rgba(91,138,240,0.08);
+    --bg-grad2: rgba(232,197,71,0.06);
+    --surface: #151820;
+    --surface2: #1a1e2a;
+    --border: #252a35;
+    --accent: #e8c547;
+    --accent-border: rgba(232,197,71,0.3);
+    --accent2: #5b8af0;
+    --text: #d8dde8;
+    --muted: #6b7385;
+    --label: #9ba8bf;
+    --success: #4ecb82;
+    --output-header-bg: #1a1e2a;
+    --icon-btn-bg: rgba(255,255,255,0.04);
+    --icon-btn-hover: rgba(255,255,255,0.08);
+    --icon-btn-hover-border: rgba(255,255,255,0.15);
+    --h1-color: #f0f3fa;
+    --tag-color: #e8c547;
+    --toast-text: #0d0f14;
+    --toggle-track: #252a35;
+    --toggle-knob: #d8dde8;
+    --toggle-active: #5b8af0;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    min-height: 100vh;
+    padding: 48px 24px 80px;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 20% -10%, var(--bg-grad1) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 110%, var(--bg-grad2) 0%, transparent 60%);
+    transition: background 0.25s, color 0.25s;
+  }
+
+  .container { max-width: 780px; margin: 0 auto; }
+
+  /* ── Header row ── */
+  .header-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 52px;
+    gap: 16px;
+  }
+
+  header { flex: 1; }
+
+  .tag {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--tag-color);
+    border: 1px solid var(--accent-border);
+    display: inline-block;
+    padding: 4px 10px;
+    margin-bottom: 18px;
+    border-radius: 2px;
+  }
+
+  h1 {
+    font-family: var(--serif);
+    font-size: clamp(28px, 5vw, 44px);
+    font-weight: 600;
+    color: var(--h1-color);
+    line-height: 1.15;
+    margin-bottom: 12px;
+  }
+
+  h1 em { font-style: italic; color: var(--accent); }
+
+  .subtitle { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+  /* ── Dark/Light toggle ── */
+  .theme-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    margin-top: 6px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .theme-toggle-label {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .toggle-track {
+    width: 38px;
+    height: 20px;
+    border-radius: 10px;
+    background: var(--toggle-track);
+    position: relative;
+    transition: background 0.2s;
+    border: 1px solid var(--border);
+  }
+
+  .toggle-track.active { background: var(--toggle-active); border-color: var(--toggle-active); }
+
+  .toggle-knob {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--toggle-knob);
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+
+  .toggle-track.active .toggle-knob { transform: translateX(18px); }
+
+  /* ── Section label ── */
+  .section-label {
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 24px;
+  }
+
+  /* ── Fields ── */
+  .field { margin-bottom: 28px; }
+
+  .field-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .field label {
+    display: block;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--label);
+  }
+
+  .field-hint {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+  }
+
+  .field textarea {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 14px 16px;
+    border-radius: 6px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.25s;
+    resize: vertical;
+    line-height: 1.6;
+  }
+
+  .field textarea::placeholder { color: var(--muted); }
+
+  .field textarea:focus {
+    border-color: rgba(91,138,240,0.5);
+    box-shadow: 0 0 0 3px rgba(91,138,240,0.08);
+  }
+
+  /* ── Multi-link input ── */
+  .links-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.25s;
+    cursor: text;
+  }
+
+  .links-box:focus-within {
+    border-color: rgba(91,138,240,0.5);
+    box-shadow: 0 0 0 3px rgba(91,138,240,0.08);
+  }
+
+  .link-pills { display: flex; flex-direction: column; gap: 4px; }
+
+  .link-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 12px;
+    color: var(--accent2);
+    word-break: break-all;
+  }
+
+  .link-pill-text { flex: 1; }
+
+  .link-remove {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    padding: 0 2px;
+    flex-shrink: 0;
+    transition: color 0.15s;
+  }
+  .link-remove:hover { color: #e05555; }
+
+  .link-input-row { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+
+  #linkInput {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 6px 2px;
+    min-width: 0;
+  }
+
+  #linkInput::placeholder { color: var(--muted); }
+
+  .link-add-hint {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* ── Attached file toggle ── */
+  .attach-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin-bottom: 28px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.25s;
+    user-select: none;
+  }
+
+  .attach-row:hover { border-color: var(--accent2); }
+
+  .attach-toggle-track {
+    width: 38px;
+    height: 20px;
+    border-radius: 10px;
+    background: var(--toggle-track);
+    position: relative;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+    transition: background 0.2s;
+  }
+
+  .attach-toggle-track.active { background: var(--toggle-active); border-color: var(--toggle-active); }
+
+  .attach-toggle-knob {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--toggle-knob);
+    position: absolute;
+    top: 2px; left: 2px;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+
+  .attach-toggle-track.active .attach-toggle-knob { transform: translateX(18px); }
+
+  .attach-info { flex: 1; }
+
+  .attach-title {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--label);
+    margin-bottom: 3px;
+  }
+
+  .attach-desc { font-size: 11px; color: var(--muted); line-height: 1.5; }
+
+  /* ── Generate button ── */
+  .generate-btn {
+    width: 100%;
+    background: var(--accent);
+    color: #0d0f14;
+    border: none;
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: opacity 0.2s, transform 0.15s;
+  }
+
+  .generate-btn:hover { opacity: 0.88; }
+  .generate-btn:active { transform: scale(0.99); }
+  .generate-btn::after { content: ' →'; font-weight: 400; }
+
+  /* ── Output ── */
+  .output-wrapper {
+    margin-top: 48px;
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    pointer-events: none;
+  }
+
+  .output-wrapper.visible { opacity: 1; transform: translateY(0); pointer-events: all; }
+
+  .output-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    background: var(--output-header-bg);
+    border: 1px solid var(--border);
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    transition: background 0.25s;
+  }
+
+  .output-title {
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .output-title::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 6px var(--success);
+  }
+
+  .header-actions { display: flex; gap: 10px; }
+
+  .icon-btn {
+    background: var(--icon-btn-bg);
+    border: 1px solid var(--border);
+    color: var(--label);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 7px 13px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    letter-spacing: 0.05em;
+  }
+
+  .icon-btn:hover {
+    background: var(--icon-btn-hover);
+    color: var(--text);
+    border-color: var(--icon-btn-hover-border);
+  }
+
+  .icon-btn svg { flex-shrink: 0; }
+
+  .icon-btn.copied {
+    color: var(--success);
+    border-color: rgba(78,203,130,0.3);
+    background: rgba(78,203,130,0.06);
+  }
+
+  .output-body {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 0 0 8px 8px;
+    padding: 28px;
+    white-space: pre-wrap;
+    font-size: 12.5px;
+    line-height: 1.8;
+    color: var(--text);
+    overflow-x: auto;
+    transition: background 0.25s;
+  }
+
+  .inserted { color: var(--accent); font-weight: 500; }
+  .xml-tag { color: var(--accent2); }
+  .section-head { color: var(--label); }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed;
+    bottom: 36px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--success);
+    color: var(--toast-text);
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    padding: 12px 24px;
+    border-radius: 40px;
+    opacity: 0;
+    transition: opacity 0.25s, transform 0.25s;
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="header-row">
+    <header>
+      <div class="tag">Prompt Builder</div>
+      <h1>Paper Review<br><em>Critique Generator</em></h1>
+      <p class="subtitle">Fill in the fields below to build your ML researcher community post prompt.</p>
+    </header>
+
+    <!-- Dark / Light mode toggle -->
+    <div class="theme-toggle" onclick="toggleTheme()" title="Toggle dark / light mode">
+      <span class="theme-toggle-label" id="themeLabel">Dark</span>
+      <div class="toggle-track" id="themeTrack">
+        <div class="toggle-knob"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">// Input Fields</div>
+
+  <!-- Extra notes / custom prompt injection -->
+  <div class="field">
+    <div class="field-header">
+      <label for="extraNotes">Your Notes &amp; Custom Instructions</label>
+      <span class="field-hint">optional — expands or constrains the output</span>
+    </div>
+    <textarea id="extraNotes" rows="3" placeholder="e.g. Focus on the training stability angle. Keep it under 120 words. Avoid mentioning transformers directly."></textarea>
+  </div>
+
+  <!-- Multi-link input -->
+  <div class="field">
+    <div class="field-header">
+      <label>Paper / Code Links</label>
+      <span class="field-hint">Enter to add each link</span>
+    </div>
+    <div class="links-box" onclick="document.getElementById('linkInput').focus()">
+      <div class="link-pills" id="linkPills"></div>
+      <div class="link-input-row">
+        <input id="linkInput" type="text" placeholder="Paste a URL and press Enter…" autocomplete="off" spellcheck="false">
+        <span class="link-add-hint" id="linkHint">↵ add</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Attached paper toggle -->
+  <div class="attach-row" onclick="toggleAttach()" id="attachRow">
+    <div class="attach-toggle-track" id="attachTrack">
+      <div class="attach-toggle-knob"></div>
+    </div>
+    <div class="attach-info">
+      <div class="attach-title">Attached Paper Mode</div>
+      <div class="attach-desc">Turn on if you are uploading the paper PDF directly. The prompt will tell the model to use the attached file for higher accuracy.</div>
+    </div>
+  </div>
+
+  <button class="generate-btn" onclick="generate()">Generate Prompt</button>
+
+  <div class="output-wrapper" id="outputWrapper">
+    <div class="output-header">
+      <span class="output-title">Generated Prompt</span>
+      <div class="header-actions">
+        <button class="icon-btn" id="copyBtn" onclick="copyPrompt()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+          </svg>
+          Copy
+        </button>
+        <button class="icon-btn" onclick="downloadPrompt()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Download
+        </button>
+      </div>
+    </div>
+    <div class="output-body" id="outputBody"></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast">✓ Prompt copied to clipboard</div>
+
+<script>
+  // ── State ──
+  let currentPromptText = '';
+  let links = [];
+  let attachOn = false;
+  let darkMode = false;
+
+  // ── Theme toggle ──
+  function toggleTheme() {
+    darkMode = !darkMode;
+    document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
+    const track = document.getElementById('themeTrack');
+    const label = document.getElementById('themeLabel');
+    track.classList.toggle('active', darkMode);
+    label.textContent = darkMode ? 'Light' : 'Dark';
+  }
+
+  // ── Attach toggle ──
+  function toggleAttach() {
+    attachOn = !attachOn;
+    document.getElementById('attachTrack').classList.toggle('active', attachOn);
+  }
+
+  // ── Link input ──
+  document.getElementById('linkInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' || (e.key === 'Enter' && e.shiftKey)) {
+      e.preventDefault();
+      commitLink();
+    }
+  });
+
+  function commitLink() {
+    const val = document.getElementById('linkInput').value.trim();
+    if (!val) return;
+    links.push(val);
+    document.getElementById('linkInput').value = '';
+    renderPills();
+  }
+
+  function removeLink(i) {
+    links.splice(i, 1);
+    renderPills();
+  }
+
+  function renderPills() {
+    const container = document.getElementById('linkPills');
+    container.innerHTML = links.map((l, i) => `
+      <div class="link-pill">
+        <span class="link-pill-text">${escapeHtml(l)}</span>
+        <button class="link-remove" onclick="removeLink(${i})" title="Remove">×</button>
+      </div>`).join('');
+    document.getElementById('linkHint').textContent = links.length ? '↵ add more' : '↵ add';
+  }
+
+  // ── Generate ──
+  function generate() {
+    // Commit any un-entered link still in the input
+    commitLink();
+
+    const notes   = document.getElementById('extraNotes').value.trim();
+    const linksText = links.join('\n');
+
+    // Build <Input> block
+    const inputLines = [];
+    if (linksText) {
+      const formatted = links.map((l, i) => `  Link ${i + 1}: ${l}`).join('\n');
+      inputLines.push(`Paper/Code Links:\n${formatted}`);
+    }
+    if (notes) inputLines.push(`Notes/Instructions: ${notes}`);
+
+    const inputBlock = inputLines.length
+      ? `<Input>\n${inputLines.join('\n\n')}\n</Input>`
+      : '';
+
+    // Attached file addition
+    const attachBlock = attachOn
+      ? `\n<AttachedFile>\nThe full paper PDF is attached to this message. Use it as your primary source. Read it carefully and make sure your critique is grounded in what the paper actually says, not just the links or summary.\n</AttachedFile>`
+      : '';
+
+    currentPromptText =
+`<Role>
+You are a seasoned machine learning researcher. You have deep expertise in advanced architectures, training dynamics, and empirical evaluation.
+</Role>
+${inputBlock ? '\n' + inputBlock : ''}${attachBlock}
+
+<Task>
+Write a community post about this paper.
+
+First, silently read and analyze the core methodology. Find one highly specific, non-obvious technical limitation, assumption, or unaddressed edge case. Think about things like representation bottlenecks, specific failure modes, theoretical gaps, or algorithmic constraints. Do not bring up generic issues like compute cost or dataset size.
+
+Then write exactly one paragraph. Keep the tone friendly, natural, and direct. Use simple, clear words. Start by briefly noting what is clever about the approach, then pivot to your specific technical critique, and close with a sharp question to the community that gets them thinking about how this weakness could be fixed.
+</Task>
+
+<Constraints>
+- Output MUST be exactly 1 paragraph. No more, no less.
+- Do not start with filler phrases or pleasantries.
+- Do not use em dashes to connect sentences. Use a period or a new sentence instead.
+- Use "you" when addressing the community, not "they" or "one".
+- The critique and question must be technically precise and on point.
+- Do not mention conferences, deadlines, or anything unrelated to the paper itself.
+</Constraints>`;
+
+    // ── HTML render ──
+    const inputHtmlLines = [];
+    if (links.length) {
+      const pillsHtml = links.map((l, i) =>
+        `  Link ${i + 1}: <span class="inserted">${escapeHtml(l)}</span>`
+      ).join('\n');
+      inputHtmlLines.push(`<span class="section-head">Paper/Code Links:</span>\n${pillsHtml}`);
+    }
+    if (notes) {
+      inputHtmlLines.push(`<span class="section-head">Notes/Instructions:</span> <span class="inserted">${escapeHtml(notes)}</span>`);
+    }
+
+    const inputHtmlBlock = inputHtmlLines.length
+      ? `<span class="xml-tag">&lt;Input&gt;</span>\n${inputHtmlLines.join('\n\n')}\n<span class="xml-tag">&lt;/Input&gt;</span>`
+      : '';
+
+    const attachHtmlBlock = attachOn
+      ? `\n\n<span class="xml-tag">&lt;AttachedFile&gt;</span>\nThe full paper PDF is attached to this message. Use it as your primary source. Read it carefully and make sure your critique is grounded in what the paper actually says, not just the links or summary.\n<span class="xml-tag">&lt;/AttachedFile&gt;</span>`
+      : '';
+
+    document.getElementById('outputBody').innerHTML =
+`<span class="xml-tag">&lt;Role&gt;</span>
+You are a seasoned machine learning researcher. You have deep expertise in advanced architectures, training dynamics, and empirical evaluation.
+<span class="xml-tag">&lt;/Role&gt;</span>${inputHtmlBlock ? '\n\n' + inputHtmlBlock : ''}${attachHtmlBlock}
+
+<span class="xml-tag">&lt;Task&gt;</span>
+Write a community post about this paper.
+
+First, silently read and analyze the core methodology. Find one highly specific, non-obvious technical limitation, assumption, or unaddressed edge case. Think about things like representation bottlenecks, specific failure modes, theoretical gaps, or algorithmic constraints. Do not bring up generic issues like compute cost or dataset size.
+
+Then write exactly one paragraph. Keep the tone friendly, natural, and direct. Use simple, clear words. Start by briefly noting what is clever about the approach, then pivot to your specific technical critique, and close with a sharp question to the community that gets them thinking about how this weakness could be fixed.
+<span class="xml-tag">&lt;/Task&gt;</span>
+
+<span class="xml-tag">&lt;Constraints&gt;</span>
+- Output MUST be exactly 1 paragraph. No more, no less.
+- Do not start with filler phrases or pleasantries.
+- Do not use em dashes to connect sentences. Use a period or a new sentence instead.
+- Use "you" when addressing the community, not "they" or "one".
+- The critique and question must be technically precise and on point.
+- Do not mention conferences, deadlines, or anything unrelated to the paper itself.
+<span class="xml-tag">&lt;/Constraints&gt;</span>`;
+
+    const wrapper = document.getElementById('outputWrapper');
+    wrapper.classList.add('visible');
+    setTimeout(() => wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+
+    const copyBtn = document.getElementById('copyBtn');
+    copyBtn.classList.remove('copied');
+    copyBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy`;
+  }
+
+  // ── Utilities ──
+  function escapeHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  async function copyPrompt() {
+    if (!currentPromptText) return;
+    try {
+      await navigator.clipboard.writeText(currentPromptText);
+      const btn = document.getElementById('copyBtn');
+      btn.classList.add('copied');
+      btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied!`;
+      showToast();
+      setTimeout(() => {
+        btn.classList.remove('copied');
+        btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy`;
+      }, 2500);
+    } catch(e) {
+      alert('Copy failed. Please select and copy manually.');
+    }
+  }
+
+  function downloadPrompt() {
+    if (!currentPromptText) return;
+    const blob = new Blob([currentPromptText], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'paper-critique-prompt.txt';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function showToast() {
+    const toast = document.getElementById('toast');
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2200);
+  }
+</script>
+</body>
+</html>
